@@ -60,3 +60,26 @@ async def process_category(message: types.Message, state: FSMContext):
     await state.update_data(category=message.text)
     await state.set_state(TransactionForm.note)
     await message.answer('📝 Введи описание (например: Обед или Зарплата)')
+
+@router.message(TransactionForm.note)
+async def process_note(message: types.Message, state: FSMContext):
+    await state.update_data(note=message.text)
+    data = await state.get_data()
+
+    transaction = Transaction(
+        user_id=message.from_user.id,
+        amount=data.get('amount'),
+        category=data.get('category'),
+        note=data.get('note')
+    )
+    try:
+        session.add(transaction)
+        session.commit()
+        await message.answer('Что то еще?', reply_markup=main_kb)
+        await message.answer('✅ Добавление прошло успешно')
+    except Exception as e:
+        session.rollback()
+        print(f'Ошибка в БД: {e}')
+        await message.answer('❌ Техническая ошибка попробуйте позже')
+    
+    await state.clear()
