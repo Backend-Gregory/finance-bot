@@ -4,6 +4,8 @@ from database import session, Transaction
 from datetime import datetime
 import csv
 from io import StringIO
+from openpyxl import Workbook
+from io import BytesIO
 
 def format_statistics(period_name: str, user_id: int, date: datetime) -> str:
     transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id, Transaction.created_at >= date)).scalars().all()
@@ -50,3 +52,16 @@ def export_to_csv(transactions):
         writer.writerow([t.id, t.amount, t.category, t.note, t.created_at.strftime('%Y-%m-%d %H:%M:%S')])
     
     return output.getvalue().encode('utf-8')
+
+def export_to_excel(transactions):
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["ID", "Сумма", "Категория", "Описание", "Дата"])
+    
+    for t in transactions:
+        ws.append([t.id, t.amount, t.category, t.note, t.created_at.strftime('%Y-%m-%d %H:%M:%S')])
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()

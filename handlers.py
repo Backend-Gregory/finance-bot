@@ -9,7 +9,7 @@ from database import session, Transaction
 from keyboards import main_kb, export_kb, type_kb, period_kb
 from states import TransactionForm
 from datetime import datetime, timedelta
-from utils import format_statistics, export_to_csv
+from utils import format_statistics, export_to_csv, export_to_excel
 from sqlalchemy import select
 
 router = Router()
@@ -152,5 +152,14 @@ async def export_csv(callback: CallbackQuery):
     
     csv_data = export_to_csv(transactions)
     file = BufferedInputFile(csv_data, filename='transactions.csv')
+    await callback.message.answer_document(file, caption='📁 Ваш экспорт', reply_markup=main_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'excel')
+async def export_excel(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id)).scalars().all()
+    excel_data = export_to_excel(transactions)
+    file = BufferedInputFile(excel_data, filename='transactions.xlsx')
     await callback.message.answer_document(file, caption='📁 Ваш экспорт', reply_markup=main_kb)
     await callback.answer()
