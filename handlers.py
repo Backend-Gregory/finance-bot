@@ -125,3 +125,10 @@ async def stats_day(callback: CallbackQuery):
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.answer(text, reply_markup=main_kb)
     await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'back_to_menu')
+async def back_to_menu(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer('Главное меню', reply_markup=main_kb)
+    await callback.answer()

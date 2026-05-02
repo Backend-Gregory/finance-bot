@@ -15,7 +15,8 @@ type_kb = InlineKeyboardMarkup(
         [
             InlineKeyboardButton(text="Доход", callback_data="income"),
             InlineKeyboardButton(text="Расход", callback_data="expense")
-        ]
+        ],
+        [InlineKeyboardButton(text="🏠 В главное меню", callback_data="back_to_menu")]
     ]
 )
 
@@ -29,7 +30,7 @@ period_kb = InlineKeyboardMarkup(
             InlineKeyboardButton(text='📆 Неделя', callback_data='week'),
             InlineKeyboardButton(text='📆 Сегодня', callback_data='day'),
         ],
-        [InlineKeyboardButton(text='🔙 Назад', callback_data='back')]
+        [InlineKeyboardButton(text='🏠 В главное меню', callback_data='back_to_menu')]
     ]
 )
 
@@ -40,7 +41,7 @@ export_kb = InlineKeyboardMarkup(
             InlineKeyboardButton(text="📊 Excel", callback_data="excel"),
         ],
         [InlineKeyboardButton(text="🌐 Google Sheets", callback_data="google_sheets")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back")]
+        [InlineKeyboardButton(text="🏠 В главное меню", callback_data="back_to_menu")]
 
     ]
 )
