@@ -54,3 +54,9 @@ async def process_amount(message: types.Message, state: FSMContext):
         await message.answer('📂 Введи категорию (например: еда, транспорт, зарплата)')
     except ValueError:
         await message.answer('❌ Ошибка! Введи число. Например: 5000')
+
+@router.message(TransactionForm.category)
+async def process_category(message: types.Message, state: FSMContext):
+    await state.update_data(category=message.text)
+    await state.set_state(TransactionForm.note)
+    await message.answer('📝 Введи описание (например: Обед или Зарплата)')
