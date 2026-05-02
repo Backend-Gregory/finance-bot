@@ -1,0 +1,40 @@
+from collections import defaultdict
+from sqlalchemy import select
+from database import session, Transaction
+from datetime import datetime
+
+def format_statistics(period_name: str, user_id: int, date: datetime) -> str:
+    transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id, Transaction.created_at >= date)).scalars().all()
+    
+    if not transactions:
+        return f"📭 Нет транзакций за {period_name}"
+    
+    income = sum(t.amount for t in transactions if t.amount > 0)
+    expense = sum(-t.amount for t in transactions if t.amount < 0)
+    balance = income - expense
+    count = len(transactions)
+
+    avg = (income + expense) / count if count > 0 else 0
+
+    expenses = [t for t in transactions if t.amount < 0]
+    cat_spending = defaultdict(float)
+    for e in expenses:
+        cat_spending[e.category] += -e.amount
+    
+    top_categories = sorted(cat_spending.items(), key=lambda x: x[1], reverse=True)[:3]
+
+    text = f"📊 Статистика за {period_name}\n\n"
+    text += f"💰 Доходы:       {income:,.0f} ₽\n"
+    text += f"💸 Расходы:      {expense:,.0f} ₽\n"
+    text += f"📊 Баланс:       {balance:,.0f} ₽\n\n"
+    text += f"📈 Количество:   {count} транзакций\n"
+    text += f"📉 Средний чек:  {avg:,.0f} ₽\n\n"
+    text += f"🔥 Топ категории:\n"
+
+    if top_categories:
+        for cat, amount in top_categories:
+            text += f"   • {cat}:      {amount:,.0f} ₽\n"
+    else:
+        text += "   • нет расходов\n"
+    
+    return text

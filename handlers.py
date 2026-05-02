@@ -8,6 +8,8 @@ from config import TOKEN
 from database import session, Transaction
 from keyboards import main_kb, export_kb, type_kb, period_kb
 from states import TransactionForm
+from datetime import datetime, timedelta
+from utils import format_statistics
 
 router = Router()
 
@@ -75,8 +77,7 @@ async def process_note(message: types.Message, state: FSMContext):
     try:
         session.add(transaction)
         session.commit()
-        await message.answer('Что то еще?', reply_markup=main_kb)
-        await message.answer('✅ Добавление прошло успешно')
+        await message.answer('✅ Добавление прошло успешно', reply_markup=main_kb)
     except Exception as e:
         session.rollback()
         print(f'Ошибка в БД: {e}')
@@ -87,5 +88,40 @@ async def process_note(message: types.Message, state: FSMContext):
 @router.callback_query(lambda x: x.data == 'stats')
 async def stats(callback: CallbackQuery):
     await callback.message.edit_reply_markup(reply_markup=None)
-    await callback.answer('📊 Выбери период', reply_markup=period_kb)
+    await callback.message.answer('📊 Выбери период', reply_markup=period_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'all_time')
+async def stats_all_time(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    text = format_statistics("всё время", user_id, datetime.min)
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer(text, reply_markup=main_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'month')
+async def stats_month(callback: CallbackQuery):
+    month_ago = datetime.now() - timedelta(days=30)
+    user_id = callback.from_user.id
+    text = format_statistics("месяц", user_id, month_ago)
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer(text, reply_markup=main_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'week')
+async def stats_week(callback: CallbackQuery):
+    week_ago = datetime.now() - timedelta(days=7)
+    user_id = callback.from_user.id
+    text = format_statistics("неделю", user_id, week_ago)
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer(text, reply_markup=main_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'day')
+async def stats_day(callback: CallbackQuery):
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    user_id = callback.from_user.id
+    text = format_statistics("сегодня", user_id, today)
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer(text, reply_markup=main_kb)
     await callback.answer()
