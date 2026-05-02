@@ -10,6 +10,15 @@ main_kb = InlineKeyboardMarkup(
     ]
 )
 
+type_kb = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Доход", callback_data="income"),
+            InlineKeyboardButton(text="Расход", callback_data="expense")
+        ]
+    ]
+)
+
 export_kb = InlineKeyboardMarkup(
     inline_keyboard=[
         [
