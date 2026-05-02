@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery
 
 from config import TOKEN
 from database import session, Transaction
-from keyboards import main_kb, export_kb, type_kb
+from keyboards import main_kb, export_kb, type_kb, period_kb
 from states import TransactionForm
 
 router = Router()
@@ -66,7 +66,7 @@ async def process_note(message: types.Message, state: FSMContext):
     await state.update_data(note=message.text)
     data = await state.get_data()
 
-    transaction = Transaction(
+    transaction = Transaction(  
         user_id=message.from_user.id,
         amount=data.get('amount'),
         category=data.get('category'),
@@ -83,3 +83,9 @@ async def process_note(message: types.Message, state: FSMContext):
         await message.answer('❌ Техническая ошибка попробуйте позже')
     
     await state.clear()
+
+@router.callback_query(lambda x: x.data == 'stats')
+async def stats(callback: CallbackQuery):
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.answer('📊 Выбери период', reply_markup=period_kb)
+    await callback.answer()
