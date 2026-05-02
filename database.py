@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Index
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Mapped, mapped_column
 from datetime import datetime
 
@@ -18,6 +18,10 @@ class Transaction(Base):
     category: Mapped[str] = mapped_column(nullable=False)
     note: Mapped[str] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
+
+    __table_args__ = (
+        Index('idx_user_id', 'user_id'),
+    )
 
 def init_db():
     Base.metadata.create_all(engine)
