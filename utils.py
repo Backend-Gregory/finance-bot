@@ -2,6 +2,8 @@ from collections import defaultdict
 from sqlalchemy import select
 from database import session, Transaction
 from datetime import datetime
+import csv
+from io import StringIO
 
 def format_statistics(period_name: str, user_id: int, date: datetime) -> str:
     transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id, Transaction.created_at >= date)).scalars().all()
@@ -38,3 +40,13 @@ def format_statistics(period_name: str, user_id: int, date: datetime) -> str:
         text += "   • нет расходов\n"
     
     return text
+
+def export_to_csv(transactions):
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Сумма", "Категория", "Описание", "Дата"])
+    
+    for t in transactions:
+        writer.writerow([t.id, t.amount, t.category, t.note, t.created_at.strftime('%Y-%m-%d %H:%M:%S')])
+    
+    return output.getvalue().encode('utf-8')

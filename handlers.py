@@ -2,14 +2,15 @@ import logging
 from aiogram import types, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, BufferedInputFile
 
 from config import TOKEN
 from database import session, Transaction
 from keyboards import main_kb, export_kb, type_kb, period_kb
 from states import TransactionForm
 from datetime import datetime, timedelta
-from utils import format_statistics
+from utils import format_statistics, export_to_csv
+from sqlalchemy import select
 
 router = Router()
 
@@ -131,4 +132,25 @@ async def back_to_menu(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.answer('Главное меню', reply_markup=main_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'export')
+async def export(callback: CallbackQuery):
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.answer('Выберите формат экспорта', reply_markup=export_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'csv')
+async def export_csv(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id)).scalars().all()
+    
+    if not transactions:
+        await callback.message.answer('📭 Нет транзакций для экспорта', reply_markup=main_kb)
+        await callback.answer()
+        return
+    
+    csv_data = export_to_csv(transactions)
+    file = BufferedInputFile(csv_data, filename='transactions.csv')
+    await callback.message.answer_document(file, caption='📁 Ваш экспорт', reply_markup=main_kb)
     await callback.answer()
