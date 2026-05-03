@@ -6,6 +6,9 @@ import csv
 from io import StringIO
 from openpyxl import Workbook
 from io import BytesIO
+import gspread
+from google.oauth2.service_account import Credentials
+import logging
 
 def format_statistics(period_name: str, user_id: int, date: datetime) -> str:
     transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id, Transaction.created_at >= date)).scalars().all()
@@ -65,3 +68,34 @@ def export_to_excel(transactions):
     wb.save(output)
     output.seek(0)
     return output.getvalue()
+
+def export_to_google_sheets(transactions, user_id):
+    try:
+        gc = gspread.service_account('google_key.json')
+        sheet_name = f'Finance_User_{user_id}'
+
+        try:
+            sh = gc.open(sheet_name)
+            worksheet = sh.sheet1
+            worksheet.clear()
+        except gspread.SpreadsheetNotFound:
+            sh = gc.create(sheet_name)
+            worksheet = sh.sheet1
+            sh.share(None, perm_type='anyone', role='reader')
+
+        worksheet.append_row(["ID", "Сумма", "Категория", "Описание", "Дата"])
+        for t in transactions:
+            worksheet.append_row([
+                t.id,
+                t.amount,
+                t.category,
+                t.note,
+                t.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            ])
+
+        url = f"https://docs.google.com/spreadsheets/d/{sh.id}/edit?usp=sharing"
+        return url
+    
+    except Exception as e:
+        logging.error(f'Ошибка экспорта в Google Sheets: {e}', exc_info=True)
+        return None

@@ -9,7 +9,7 @@ from database import session, Transaction
 from keyboards import main_kb, export_kb, type_kb, period_kb
 from states import TransactionForm
 from datetime import datetime, timedelta
-from utils import format_statistics, export_to_csv, export_to_excel
+from utils import format_statistics, export_to_csv, export_to_excel, export_to_google_sheets
 from sqlalchemy import select
 
 router = Router()
@@ -159,7 +159,30 @@ async def export_csv(callback: CallbackQuery):
 async def export_excel(callback: CallbackQuery):
     user_id = callback.from_user.id
     transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id)).scalars().all()
+
+    if not transactions:
+        await callback.message.answer('📭 Нет транзакций для экспорта', reply_markup=main_kb)
+        await callback.answer()
+        return
+    
     excel_data = export_to_excel(transactions)
     file = BufferedInputFile(excel_data, filename='transactions.xlsx')
     await callback.message.answer_document(file, caption='📁 Ваш экспорт', reply_markup=main_kb)
+    await callback.answer()
+
+@router.callback_query(lambda x: x.data == 'google_sheets')
+async def excport_google_sheets(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    transactions = session.execute(select(Transaction).where(Transaction.user_id == user_id)).scalars().all()
+
+    if not transactions:
+        await callback.message.answer('📭 Нет транзакций для экспорта', reply_markup=main_kb)
+        await callback.answer()
+        return
+    
+    url = export_to_google_sheets(transactions, user_id)
+    if url:
+        await callback.message.answer(f"✅ Таблица: {url}", reply_markup=main_kb)
+    else:
+        await callback.message.answer("❌ Ошибка при создании таблицы.", reply_markup=main_kb)
     await callback.answer()
