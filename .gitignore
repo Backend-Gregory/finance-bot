@@ -1,3 +1,5 @@
 .env
 database.db
 google_key.json
+__pycache__/
+bot.log

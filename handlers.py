@@ -1,10 +1,9 @@
-import logging
 from aiogram import types, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, BufferedInputFile
 
-from config import TOKEN
+from config import MAX_AMOUNT, MAX_NOTE_LENGTH
 from database import session, Transaction
 from keyboards import main_kb, export_kb, type_kb, period_kb
 from states import TransactionForm
@@ -45,6 +44,14 @@ async def amount(callback: CallbackQuery, state: FSMContext):
 async def process_amount(message: types.Message, state: FSMContext):
     try:
         amount = float(message.text.replace(',', '.'))
+
+        if amount == 0:
+            await message.answer("❌ Сумма не может быть равна 0. Введите число больше 0 или меньше 0.")
+
+        if abs(amount) > MAX_AMOUNT:
+            await message.answer(f"❌ Сумма не может быть больше {MAX_AMOUNT} ₽")
+            return
+            
         data = await state.get_data()
         
         if data.get('transaction_type') == 'income':
@@ -60,12 +67,23 @@ async def process_amount(message: types.Message, state: FSMContext):
 
 @router.message(TransactionForm.category)
 async def process_category(message: types.Message, state: FSMContext):
+    if not message.text.strip():
+        await message.answer("❌ Категория не может быть пустой. Введи категорию (например: еда, транспорт)")
+        return
+    
     await state.update_data(category=message.text)
     await state.set_state(TransactionForm.note)
     await message.answer('📝 Введи описание (например: Обед или Зарплата)')
 
 @router.message(TransactionForm.note)
 async def process_note(message: types.Message, state: FSMContext):
+    if not message.text.strip():
+        note = "—"
+    
+    if len(note) > MAX_NOTE_LENGTH:
+        await message.answer(f"❌ Описание слишком длинное (макс {MAX_NOTE_LENGTH} символов)")
+        return
+    
     await state.update_data(note=message.text)
     data = await state.get_data()
 
