@@ -48,6 +48,7 @@ def format_statistics(period_name: str, user_id: int, date: datetime) -> str:
 
 def export_to_csv(transactions):
     output = StringIO()
+    output.write('\ufeff')
     writer = csv.writer(output)
     writer.writerow(["ID", "Сумма", "Категория", "Описание", "Дата"])
     
