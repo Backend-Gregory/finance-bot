@@ -73,18 +73,19 @@ def export_to_excel(transactions):
 def export_to_google_sheets(transactions, user_id):
     try:
         gc = gspread.service_account('google_key.json')
-        sheet_name = f'Finance_User_{user_id}'
-
+        
+        spreadsheet_url = "https://docs.google.com/spreadsheets/d/1r56-SRU2eC01ZrK8awpu0nIiC8PL-56JzIG2S6zXE2U/edit?gid=0#gid=0"
+        sh = gc.open_by_url(spreadsheet_url)
+        
+        sheet_name = str(user_id)
+        
         try:
-            sh = gc.open(sheet_name)
-            worksheet = sh.sheet1
+            worksheet = sh.worksheet(sheet_name)
             worksheet.clear()
-        except gspread.SpreadsheetNotFound:
-            sh = gc.create(sheet_name)
-            worksheet = sh.sheet1
-            sh.share(None, perm_type='anyone', role='reader')
-
-        worksheet.append_row(["ID", "Сумма", "Категория", "Описание", "Дата"])
+        except gspread.WorksheetNotFound:
+            worksheet = sh.add_worksheet(title=sheet_name, rows=1000, cols=5)
+            worksheet.append_row(["ID", "Сумма", "Категория", "Описание", "Дата"])
+        
         for t in transactions:
             worksheet.append_row([
                 t.id,
@@ -94,7 +95,8 @@ def export_to_google_sheets(transactions, user_id):
                 t.created_at.strftime('%Y-%m-%d %H:%M:%S')
             ])
 
-        url = f"https://docs.google.com/spreadsheets/d/{sh.id}/edit?usp=sharing"
+
+        url = f"https://docs.google.com/spreadsheets/d/{sh.id}/edit#gid={worksheet.id}"
         return url
     
     except Exception as e:
