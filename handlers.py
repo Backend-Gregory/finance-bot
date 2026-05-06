@@ -77,14 +77,14 @@ async def process_category(message: types.Message, state: FSMContext):
 
 @router.message(TransactionForm.note)
 async def process_note(message: types.Message, state: FSMContext):
-    if not message.text.strip():
-        note = "—"
+    raw_text = message.text if message.text else ""
+    note = raw_text.strip() if raw_text else "—"
     
     if len(note) > MAX_NOTE_LENGTH:
         await message.answer(f"❌ Описание слишком длинное (макс {MAX_NOTE_LENGTH} символов)")
         return
     
-    await state.update_data(note=message.text)
+    await state.update_data(note=note)
     data = await state.get_data()
 
     transaction = Transaction(  
